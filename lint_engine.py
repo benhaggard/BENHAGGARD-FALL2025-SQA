@@ -140,7 +140,7 @@ def getDataLoadCount(py_file):
     # this will be used to check if the file_name passed in as file to read, is logged  
     LOGGING_IS_ON_FLAG = py_parser.checkLoggingPerData( py_tree, constants.DUMMY_LOG_KW ) 
     # print(LOGGING_IS_ON_FLAG, data_load_count) 
-	forensic_logger.info(f"ANALYSIS_COMPLETE: Found {data_load_count} data load operations in {py_file}")
+    forensic_logger.info(f"ANALYSIS_COMPLETE: Found {data_load_count} data load operations in {py_file}")
     
     if data_load_count > 10:
         forensic_logger.warning(f"ANOMALY: Excessive data loading ({data_load_count} operations) in {py_file}")
