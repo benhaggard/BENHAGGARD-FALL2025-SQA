@@ -233,7 +233,7 @@ def getDataLoadCountc( py_file ):
 
 
 def getModelLoadCounta( py_file ):
-	forensic_logger.info(f"MODEL_ANALYSIS_START: Checking for model loading operations in {py_file}")
+    forensic_logger.info(f"MODEL_ANALYSIS_START: Checking for model loading operations in {py_file}")
     model_load_counta = 0 
     py_tree = py_parser.getPythonParseObject(py_file)
     func_def_list  = py_parser.getPythonAtrributeFuncs( py_tree ) 
