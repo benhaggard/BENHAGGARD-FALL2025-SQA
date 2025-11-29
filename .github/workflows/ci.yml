@@ -33,6 +33,7 @@ jobs:
     - name: Run Fuzzing Tests
       run: |
         echo "Running automated fuzzing tests..."
+        cd FAME-ML
         python fuzz.py
 
   code-quality:
