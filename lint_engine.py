@@ -29,10 +29,10 @@ def getDataLoadCount(py_file):
     for def_ in func_def_list:
         class_name, func_name, func_line, arg_call_list = def_
         
-        if(( class_name == constants.TORCH_KW ) and (func_name == constants.LOAD_KW ) ):
+        if ((class_name == constants.TORCH_KW) and (func_name == constants.LOAD_KW)):
             data_load_count += 1 
-            print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_DATA_LOAD, func_line , py_file  ) )
-			forensic_logger.warning(f"MODEL_LOAD_EVENT: torch.load() detected in {py_file} at line {func_line}. RISK: Model poisoning" )
+            print(constants.CONSOLE_STR_DISPLAY.format(constants.CONSOLE_STR_DATA_LOAD, func_line, py_file))
+            forensic_logger.warning(f"MODEL_LOAD_EVENT: torch.load() detected in {py_file} at line {func_line}. RISK: Model poisoning")
             
         elif(( class_name == constants.DATA_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
@@ -41,7 +41,7 @@ def getDataLoadCount(py_file):
         elif(( class_name == constants.PICKLE_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_DATA_LOAD, func_line , py_file  ) )
-			forensic_logger.critical(f"HIGH_RISK: pickle.load() in {py_file} at line {func_line}. RISK: Code execution" )
+            forensic_logger.critical(f"HIGH_RISK: pickle.load() in {py_file} at line {func_line}. RISK: Code execution" )
             
         elif(( class_name == constants.JSON_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
