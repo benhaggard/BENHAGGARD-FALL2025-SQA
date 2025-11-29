@@ -1,1 +1,264 @@
+name: MLForensics CI Pipeline
 
+# Trigger on push and pull requests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  # Job 1: Fuzzing Tests
+  fuzzing:
+    runs-on: ubuntu-latest
+    name: Automated Fuzzing Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy pandas
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Run Fuzzing Tests
+      run: |
+        echo "Running automated fuzzing tests..."
+        python fuzz.py
+        
+    - name: Upload Fuzzing Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: fuzzing-results
+        path: |
+          *.log
+          fuzz_report_*.txt
+        retention-days: 30
+
+  # Job 2: Code Quality & Linting
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint flake8 bandit
+        
+    - name: Run Pylint
+      continue-on-error: true
+      run: |
+        echo "Running Pylint..."
+        pylint *.py --exit-zero --output-format=text > pylint_report.txt || true
+        cat pylint_report.txt
+        
+    - name: Run Flake8
+      continue-on-error: true
+      run: |
+        echo "Running Flake8..."
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics > flake8_report.txt || true
+        
+    - name: Run Bandit Security Scan
+      continue-on-error: true
+      run: |
+        echo "Running Bandit security scan..."
+        bandit -r . -f txt -o bandit_report.txt || true
+        cat bandit_report.txt
+        
+    - name: Upload Quality Reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-quality-reports
+        path: |
+          pylint_report.txt
+          flake8_report.txt
+          bandit_report.txt
+        retention-days: 30
+
+  # Job 3: Unit Tests (if any exist)
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov numpy pandas
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Run Unit Tests
+      continue-on-error: true
+      run: |
+        echo "Running unit tests..."
+        pytest --verbose --cov=. --cov-report=term-missing --cov-report=html || echo "No tests found or tests failed"
+        
+    - name: Upload Coverage Reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-reports
+        path: |
+          htmlcov/
+          .coverage
+        retention-days: 30
+
+  # Job 4: Static Analysis & Forensics Check
+  static-analysis:
+    runs-on: ubuntu-latest
+    name: Static Analysis & Forensics
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy pandas
+        
+    - name: Check Logging Implementation
+      run: |
+        echo "Checking for forensics logging implementation..."
+        echo "Files with logging imports:"
+        grep -r "import logging" *.py || echo "No logging imports found"
+        echo ""
+        echo "Logging statements found:"
+        grep -r "logger\." *.py || echo "No logger statements found"
+        grep -r "forensic_logger" *.py || echo "No forensic_logger statements found"
+        echo ""
+        echo "Files with timestamp logging:"
+        grep -r "asctime" *.py || echo "No timestamp logging found"
+        
+    - name: Verify Fuzzing Implementation
+      run: |
+        echo "Verifying fuzz.py exists and is executable..."
+        if [ -f fuzz.py ]; then
+          echo "✓ fuzz.py found"
+          python -m py_compile fuzz.py && echo "✓ fuzz.py compiles successfully" || echo "✗ fuzz.py has syntax errors"
+        else
+          echo "✗ fuzz.py not found"
+          exit 1
+        fi
+        
+    - name: Code Metrics
+      continue-on-error: true
+      run: |
+        echo "=== Code Metrics ==="
+        echo "Total Python files:"
+        find . -name "*.py" | wc -l
+        echo ""
+        echo "Total lines of code:"
+        find . -name "*.py" -exec wc -l {} + | tail -1
+        echo ""
+        echo "Files by size:"
+        find . -name "*.py" -exec wc -l {} + | sort -rn | head -10
+
+  # Job 5: Integration Test
+  integration-test:
+    runs-on: ubuntu-latest
+    name: Integration Test
+    needs: [fuzzing, code-quality]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy pandas
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Test Import Structure
+      run: |
+        echo "Testing if all modules can be imported..."
+        python -c "import constants; print('✓ constants imported')"
+        python -c "import py_parser; print('✓ py_parser imported')"
+        python -c "import lint_engine; print('✓ lint_engine imported')"
+        
+    - name: Quick Functionality Test
+      continue-on-error: true
+      run: |
+        echo "Running quick functionality test..."
+        python -c "
+        import py_parser
+        import ast
+        print('Testing getPythonParseObject...')
+        tree = py_parser.getPythonParseObject('constants.py')
+        print(f'✓ Successfully parsed constants.py')
+        "
+
+  # Job 6: Build Summary Report
+  build-summary:
+    runs-on: ubuntu-latest
+    name: Build Summary Report
+    needs: [fuzzing, code-quality, unit-tests, static-analysis, integration-test]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Generate Build Summary
+      run: |
+        echo "# CI Build Summary" > build_summary.md
+        echo "" >> build_summary.md
+        echo "**Build Date:** $(date)" >> build_summary.md
+        echo "**Commit:** ${{ github.sha }}" >> build_summary.md
+        echo "**Branch:** ${{ github.ref }}" >> build_summary.md
+        echo "" >> build_summary.md
+        echo "## Job Status" >> build_summary.md
+        echo "- Fuzzing: ${{ needs.fuzzing.result }}" >> build_summary.md
+        echo "- Code Quality: ${{ needs.code-quality.result }}" >> build_summary.md
+        echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> build_summary.md
+        echo "- Static Analysis: ${{ needs.static-analysis.result }}" >> build_summary.md
+        echo "- Integration Test: ${{ needs.integration-test.result }}" >> build_summary.md
+        echo "" >> build_summary.md
+        cat build_summary.md
+        
+    - name: Upload Build Summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-summary
+        path: build_summary.md
+        retention-days: 90
