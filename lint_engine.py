@@ -12,22 +12,22 @@ import socket
 import os
 
 # Forensics logging configuration
-logging.basicConfig(
-level=logging.INFO,
-format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
-datefmt='%Y-%m-%d %H:%M:%S'
+	logging.basicConfig(
+	level=logging.INFO,
+	format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
+	datefmt='%Y-%m-%d %H:%M:%S'
 )
 
 forensic_logger = logging.getLogger(__name__)
 
-def getDataLoadCount( py_file ):
-	forensic_logger.info(f"ANALYSIS_START: Analyzing data load patterns in {py_file}")
+def getDataLoadCount(py_file):
+    forensic_logger.info(f"ANALYSIS_START: Analyzing data load patterns in {py_file}")
     data_load_count = 0 
     py_tree = py_parser.getPythonParseObject(py_file)
-    func_def_list  = py_parser.getPythonAtrributeFuncs( py_tree ) 
+    func_def_list = py_parser.getPythonAtrributeFuncs(py_tree) 
 
     for def_ in func_def_list:
-        class_name, func_name, func_line, arg_call_list = def_ 
+        class_name, func_name, func_line, arg_call_list = def_
         
         if(( class_name == constants.TORCH_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
