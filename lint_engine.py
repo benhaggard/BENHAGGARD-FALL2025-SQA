@@ -12,10 +12,10 @@ import socket
 import os
 
 # Forensics logging configuration
-	logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+logging.basicConfig(
+level=logging.INFO,
+format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
+datefmt='%Y-%m-%d %H:%M:%S'
 )
 
 forensic_logger = logging.getLogger(__name__)
@@ -32,9 +32,7 @@ def getDataLoadCount( py_file ):
         if(( class_name == constants.TORCH_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_DATA_LOAD, func_line , py_file  ) )
-			forensic_logger.warning(
-                f"MODEL_LOAD_EVENT: torch.load() detected in {py_file} at line {func_line}. RISK: Model poisoning"
-            )
+			forensic_logger.warning(f"MODEL_LOAD_EVENT: torch.load() detected in {py_file} at line {func_line}. RISK: Model poisoning" )
             
         elif(( class_name == constants.DATA_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
@@ -43,9 +41,7 @@ def getDataLoadCount( py_file ):
         elif(( class_name == constants.PICKLE_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_DATA_LOAD, func_line , py_file  ) )
-			forensic_logger.critical(
-                f"HIGH_RISK: pickle.load() in {py_file} at line {func_line}. RISK: Code execution"
-            )
+			forensic_logger.critical(f"HIGH_RISK: pickle.load() in {py_file} at line {func_line}. RISK: Code execution" )
             
         elif(( class_name == constants.JSON_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
