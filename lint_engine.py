@@ -7,8 +7,21 @@ Executes the pattern matching and data flow analysis
 
 import py_parser
 import constants 
+import logging
+import socket
+import os
+
+# Forensics logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+forensic_logger = logging.getLogger(__name__)
 
 def getDataLoadCount( py_file ):
+	forensic_logger.info(f"ANALYSIS_START: Analyzing data load patterns in {py_file}")
     data_load_count = 0 
     py_tree = py_parser.getPythonParseObject(py_file)
     func_def_list  = py_parser.getPythonAtrributeFuncs( py_tree ) 
@@ -19,6 +32,9 @@ def getDataLoadCount( py_file ):
         if(( class_name == constants.TORCH_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_DATA_LOAD, func_line , py_file  ) )
+			forensic_logger.warning(
+                f"MODEL_LOAD_EVENT: torch.load() detected in {py_file} at line {func_line}. RISK: Model poisoning"
+            )
             
         elif(( class_name == constants.DATA_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
@@ -27,6 +43,9 @@ def getDataLoadCount( py_file ):
         elif(( class_name == constants.PICKLE_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_DATA_LOAD, func_line , py_file  ) )
+			forensic_logger.critical(
+                f"HIGH_RISK: pickle.load() in {py_file} at line {func_line}. RISK: Code execution"
+            )
             
         elif(( class_name == constants.JSON_KW ) and (func_name == constants.LOAD_KW ) ):
             data_load_count += 1 
@@ -125,6 +144,10 @@ def getDataLoadCount( py_file ):
     # this will be used to check if the file_name passed in as file to read, is logged  
     LOGGING_IS_ON_FLAG = py_parser.checkLoggingPerData( py_tree, constants.DUMMY_LOG_KW ) 
     # print(LOGGING_IS_ON_FLAG, data_load_count) 
+	forensic_logger.info(f"ANALYSIS_COMPLETE: Found {data_load_count} data load operations in {py_file}")
+    
+    if data_load_count > 10:
+        forensic_logger.warning(f"ANOMALY: Excessive data loading ({data_load_count} operations) in {py_file}")
     return data_load_count 
     
     
