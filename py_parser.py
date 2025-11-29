@@ -8,6 +8,18 @@ Parser needed to implement FAME-ML
 import ast 
 import os 
 import constants 
+import logging
+import socket
+import datetime
+
+# Forensics logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+forensic_logger = logging.getLogger(__name__)
 
 
 def checkLoggingPerData(tree_object, name2track):
