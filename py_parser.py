@@ -89,13 +89,60 @@ def checkAttribFuncsInExcept(expr_obj):
                 attrib_list = attrib_list + commonAttribCallBody( func_node )
     return attrib_list 
 
-def getPythonParseObject( pyFile ): 
-	try:
-		full_tree = ast.parse( open( pyFile ).read())    
-	except SyntaxError:
-		# print(constants.PARSING_ERROR_KW, pyFile )
-		full_tree = ast.parse(constants.EMPTY_STRING) 
-	return full_tree 
+def getPythonParseObject( pyFile ):  
+    '''
+    Modified with forensics logging to detect data poisoning attacks
+    Reference: Papernot et al. - Data loading facilitates poisoning attacks
+    '''
+    
+    # LOG: File access attempt - track who is loading what data
+    forensic_logger.info(f"DATA_LOAD_EVENT: Attempting to parse Python file: {pyFile}")
+    
+    try:
+        # Check if file exists first
+        if not os.path.exists(pyFile):
+            forensic_logger.warning(
+                f"SECURITY_ALERT: Attempted to access non-existent file: {pyFile}"
+            )
+            return ast.parse(constants.EMPTY_STRING)
+        
+        # Get file metadata for forensics
+        file_size = os.path.getsize(pyFile)
+        file_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(pyFile))
+        
+        # LOG: File metadata - track data provenance
+        forensic_logger.info(
+            f"DATA_LOAD_METADATA: File={pyFile}, Size={file_size} bytes, "
+            f"Modified={file_mtime.isoformat()}"
+        )
+        
+        # Parse the file
+        full_tree = ast.parse(open(pyFile).read())
+        
+        # LOG: Successful parse
+        forensic_logger.info(f"DATA_LOAD_SUCCESS: Successfully parsed {pyFile}")
+        
+        return full_tree
+        
+    except SyntaxError as err_:
+        # LOG: Syntax error - could indicate corrupted/malicious data
+        forensic_logger.error(
+            f"DATA_INTEGRITY_ALERT: Syntax error in {pyFile}: {str(err_)}"
+        )
+        return ast.parse(constants.EMPTY_STRING)
+    except UnicodeDecodeError as err_:
+        # LOG: Encoding error - potential binary/malicious file
+        forensic_logger.error(
+            f"ENCODING_ERROR: Cannot decode {pyFile}: {str(err_)}"
+        )
+        return ast.parse(constants.EMPTY_STRING)
+    except Exception as err_:
+        # LOG: Unexpected error - potential attack
+        forensic_logger.error(
+            f"SECURITY_EXCEPTION: Unexpected error parsing {pyFile}: "
+            f"{type(err_).__name__} - {str(err_)}"
+        )
+        return ast.parse(constants.EMPTY_STRING)
 
 def commonAttribCallBody(node_):
     full_list = []
