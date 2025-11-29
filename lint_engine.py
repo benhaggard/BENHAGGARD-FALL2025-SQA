@@ -243,14 +243,14 @@ def getModelLoadCounta( py_file ):
         if(( class_name == constants.DEEP_SPEECH_KW ) and (func_name == constants.LOAD_MODEL_PACKAGE_KW) ):
             model_load_counta += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_MODEL_LOAD, func_line , py_file  ) )
-			forensic_logger.warning(
+            forensic_logger.warning(
                 f"PRETRAINED_MODEL_LOAD: DeepSpeech model loading in {py_file} at line {func_line}. RISK: Model backdoor"
             )
         
         elif(( class_name == constants.MODELS_KW ) and (func_name == constants.LOAD_MODEL_KW) ):
             model_load_counta += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_MODEL_LOAD, func_line , py_file  ) )
-			forensic_logger.warning(
+            forensic_logger.warning(
                 f"MODEL_LOAD_EVENT: Keras model loading in {py_file} at line {func_line}. RISK: Untrusted model"
             )
 			
@@ -258,7 +258,7 @@ def getModelLoadCounta( py_file ):
         elif(( class_name == constants.MODEL_KW ) and (func_name == constants.LOAD_STATE_DICT_KW) ):
             model_load_counta += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_MODEL_LOAD, func_line , py_file  ) )
-			forensic_logger.warning(
+            forensic_logger.warning(
                 f"MODEL_PARAMETERS_LOAD: PyTorch state_dict loading in {py_file} at line {func_line}. RISK: Parameter injection"
             )
 			
