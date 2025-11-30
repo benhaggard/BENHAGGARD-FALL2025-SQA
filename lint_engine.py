@@ -621,6 +621,7 @@ def getDataPipelineCountd( py_file ):
 	
 
 def getEnvironmentCount( py_file ):
+    forensic_logger.info(f"RL_ENVIRONMENT_ANALYSIS: Checking RL environment operations in {py_file}")
     environment_count = 0 
     py_tree = py_parser.getPythonParseObject(py_file)
     func_def_list  = py_parser.getPythonAtrributeFuncs( py_tree ) 
@@ -630,17 +631,30 @@ def getEnvironmentCount( py_file ):
         if(( class_name == constants.WRAPPED_ENV_KW ) and (func_name == constants.STEP_KW ) and (len(arg_call_list) > 0)):
             environment_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_REL_ENV, func_line , py_file  ) )
+            forensic_logger.info(
+                f"RL_ENV_STEP: Environment interaction in {py_file} at line {func_line}. MONITOR: Manipulation risk"
+            )
             
         elif(( class_name == constants.ENV_KW ) and (func_name == constants.STEP_KW ) and (len(arg_call_list) > 0)):
             environment_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_REL_ENV, func_line , py_file  ) )
+            forensic_logger.info(
+                f"RL_ENV_INTERACTION: env.step() called in {py_file} at line {func_line}"
+            )
             
         elif(( class_name == constants.GYM_KW ) and (func_name == constants.MAKE_KW ) and (len(arg_call_list) > 0)):
             environment_count += 1 
             print( constants.CONSOLE_STR_DISPLAY.format( constants.CONSOLE_STR_REL_ENV, func_line , py_file  ) )
+            forensic_logger.info(
+                f"RL_ENV_CREATE: Creating RL environment in {py_file} at line {func_line}"
+            )
             
     LOGGING_IS_ON_FLAG = py_parser.checkLoggingPerData( py_tree, constants.DUMMY_LOG_KW ) 
-    # print(LOGGING_IS_ON_FLAG, environment_count) 
+    # print(LOGGING_IS_ON_FLAG, environment_count)
+    forensic_logger.info(f"RL_ANALYSIS_COMPLETE: Found {environment_count} RL environment operations in {py_file}")
+    
+    if environment_count > 50:
+        forensic_logger.warning(f"RL_ANOMALY: Excessive environment interactions ({environment_count}) in {py_file}")
     return environment_count 
 	
 
