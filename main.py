@@ -11,7 +11,19 @@ import datetime
 import os 
 import pandas as pd
 import py_parser 
-import numpy as np 
+import numpy as np
+import logging
+import socket
+import os
+
+# Forensics logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - [%(levelname)s] - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+forensic_logger = logging.getLogger(__name__)
 
 
 def giveTimeStamp():
@@ -150,18 +162,24 @@ def getAllPythonFilesinRepo(path2dir):
 
 
 def runFameML(inp_dir, csv_fil):
+    forensic_logger.info(f"PIPELINE_START: Starting MLForensics analysis. Input: {inp_dir}, Output: {csv_fil}")
 	output_event_dict = {}
 	df_list = [] 
 	list_subfolders_with_paths = [f.path for f in os.scandir(inp_dir) if f.is_dir()]
-	for subfolder in list_subfolders_with_paths: 
-		events_with_dic =  getAllPythonFilesinRepo(subfolder)  
+    forensic_logger.info(f"ANALYSIS_SCOPE: Found {len(list_subfolders_with_paths)} repositories to analyze")
+	for subfolder in list_subfolders_with_paths:
+        forensic_logger.info(f"REPO_ANALYSIS_START: Analyzing repository: {subfolder}")
+		events_with_dic =  getAllPythonFilesinRepo(subfolder)
+        forensic_logger.info(f"REPO_FILES_FOUND: {len(events_with_dic)} Python files in {subfolder}")
 		if subfolder not in output_event_dict:
 			output_event_dict[subfolder] = events_with_dic
 		temp_list  = getCSVData(events_with_dic, subfolder)
-		df_list    = df_list + temp_list 
+		df_list    = df_list + temp_list
+        forensic_logger.info(f"REPO_ANALYSIS_COMPLETE: Finished analyzing {subfolder}")
 		print(constants.ANALYZING_KW, subfolder)
 		print('-'*50)
-	full_df = pd.DataFrame( df_list ) 
+	full_df = pd.DataFrame( df_list )
+    forensic_logger.info(f"RESULTS_WRITE: Writing {len(df_list)} analysis results to {csv_fil}")
 	# print(full_df.head())
 	full_df.to_csv(csv_fil, header= constants.CSV_HEADER, index=False, encoding= constants.UTF_ENCODING)     
 	return output_event_dict
